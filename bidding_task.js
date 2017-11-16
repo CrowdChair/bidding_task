@@ -228,12 +228,12 @@ var styles = `
   }
 
   .question.header {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
   }
 
   .ui.session.label {
-    margin-top: 10px;
-    margin-right: 10px;
+    margin-top: 6px;
+    margin-right: 6px;
     cursor:pointer;
   }
 
@@ -246,7 +246,7 @@ var styles = `
   }
 
   .answering.section {
-    margin-top: 20px;
+    margin-top: 10px;
   }
 `;
 
@@ -313,15 +313,6 @@ var renderApp = function(sessions) {
           <div class="sessions section">
             <div class="ui stackable grid">
 
-              <div class="eight wide column">
-                <h3 class="ui dividing header">
-                  セッションリスト
-                </h3>
-                <div id="default" class="ui segment session-frame dropzone">
-                  ${$sessionLabels}
-                </div>
-              </div>
-
               <div class="four wide column">
                 <h3 class="ui dividing header">
                   発表に適するセッション
@@ -335,6 +326,15 @@ var renderApp = function(sessions) {
                   発表可能なセッション
                 </h3>
                 <div id="possible" class="ui segment session-frame dropzone">
+                </div>
+              </div>
+
+              <div class="eight wide column">
+                <h3 class="ui dividing header">
+                  セッションリスト
+                </h3>
+                <div id="default" class="ui segment session-frame dropzone">
+                  ${$sessionLabels}
                 </div>
               </div>
 
