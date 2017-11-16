@@ -1,10 +1,10 @@
 var appendStyle = function(style) {
-  var css = document.createElement('style');
-  css.type = 'text/css';
+  var css = document.createElement("style");
+  css.type = "text/css";
   if (css.styleSheet) css.styleSheet.cssText = styles;
   else css.appendChild(document.createTextNode(styles));
   document.getElementsByTagName("head")[0].appendChild(css);
-}
+};
 
 var styles = `
   .page {
@@ -42,7 +42,7 @@ var renderApp = function() {
 };
 
 var clickedFunc = function() {
-  var $store = $('[name=store]')[0];
+  var $store = $("[name=store]")[0];
   console.log($store);
   $($store).submit();
 };
@@ -50,8 +50,8 @@ var clickedFunc = function() {
 $(function() {
   appendStyle(styles);
 
-  $app = $('#app-root');
-  $app.append(renderApp())
+  $app = $("#app-root");
+  $app.append(renderApp());
 
-  $app.find('.js-answer-button').click(clickedFunc);
+  $app.find(".js-answer-button").click(clickedFunc);
 });

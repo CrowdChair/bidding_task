@@ -1,10 +1,10 @@
 var appendStyle = function(style) {
-  var css = document.createElement('style');
-  css.type = 'text/css';
+  var css = document.createElement("style");
+  css.type = "text/css";
   if (css.styleSheet) css.styleSheet.cssText = styles;
   else css.appendChild(document.createTextNode(styles));
   document.getElementsByTagName("head")[0].appendChild(css);
-}
+};
 
 // セッションデータ
 // FIXME: schemaを定義してajaxで取得する？
@@ -215,8 +215,7 @@ var sessions = $.parseJSON(`
 
 var styles = `
   .page {
-    margin-top: 30px;
-    margin-bottom: 30px;
+    margin: 40px;
   }
 
   .content {
@@ -224,47 +223,60 @@ var styles = `
     padding-right: 20px;
   }
 
-  .section {
+  section {
     margin-top: 20px;
   }
-  
-  .scroolable {
-    overflow-y: scroll;
+
+  .question.header {
+    margin-bottom: 30px;
   }
-  
-  .scroolable.table {
-    height: 40vh;
+
+  .ui.session.label {
+    margin-top: 10px;
+    margin-right: 10px;
+    cursor:pointer;
+  }
+
+  .session-frame {
+    min-height: 200px;
+  }
+
+  .hovering {
+    background-color: #D3DEF1 !important;
+  }
+
+  .answering.section {
+    margin-top: 20px;
   }
 `;
 
-var renderTableBody = function(sessions) {
-  return sessions.map(function(session){
-    return `
-      <tr>
-        <td>${session.name}</td>
-        <td><input type="radio" value="3" name="${session.sid}" /></td>
-        <td><input type="radio" value="2" name="${session.sid}" /></td>
-        <td><input type="radio" value="0" name="${session.sid}" checked /></td>
-      </tr>
-    `
-  }).join("");
-}
+var renderSessionLabels = function(sessions) {
+  return sessions
+    .map(function(session) {
+      return `
+      <div class="ui session label draggable" id="${session.sid}" draggable="true">
+        ${session.name}
+      </div>
+    `;
+    })
+    .join("");
+};
 
 var renderApp = function(sessions) {
-  var table_body = renderTableBody(sessions);
+  var $sessionLabels = renderSessionLabels(sessions);
 
   var getValueFromInput = function(name) {
     return $(`input[name='${name}']`).val();
   };
 
-  var $title    = getValueFromInput('title');
-  var $authors  = getValueFromInput('authors');
-  var $abstract = getValueFromInput('abstract');
-  var $keywords = getValueFromInput('keywords');
+  var $title = getValueFromInput("title");
+  var $authors = getValueFromInput("authors");
+  var $abstract = getValueFromInput("abstract");
+  var $keywords = getValueFromInput("keywords");
 
   var $task = $(`
     <div class="bidding task page">
-      <div class="ui container main">
+      <div class="main">
         <h1>投稿のセッション投票タスク</h1>
         <div class="question header">
           <p>以下の投稿内容を読み、設問に答えてください</p>
@@ -294,24 +306,38 @@ var renderApp = function(sessions) {
           <h2>設問</h2>
           <div class="question header">
             <p>
-              上記の投稿が発表可能なセッションを以下の選択肢から<b>1つ以上、できるだけ多く</b>選択してください。選択肢は全部で50個あります。
+              セッションリストの中から該当するラベルを選択し，「発表に適するセッション」または「発表可能なセッション」の枠に
+              ドラッグ&ドロップしてください．<b>目標数5個以上</b>
             </p>
           </div>
           <div class="sessions section">
-            <div class="scroolable table">
-              <table class="ui celled unstackable center aligned four column table">
-                <thead>
-                  <tr>
-                    <th>セッション名</th>
-                    <th>このセッションで<br/>発表が望ましい</th>
-                    <th>このセッションで<br/>発表できる</th>
-                    <th>未回答</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${table_body}
-                </tbody>
-              </table>
+            <div class="ui stackable grid">
+
+              <div class="eight wide column">
+                <h3 class="ui dividing header">
+                  セッションリスト
+                </h3>
+                <div id="default" class="ui segment session-frame dropzone">
+                  ${$sessionLabels}
+                </div>
+              </div>
+
+              <div class="four wide column">
+                <h3 class="ui dividing header">
+                  発表に適するセッション
+                </h3>
+                <div id="desirable" class="ui segment session-frame dropzone">
+                </div>
+              </div>
+
+              <div class="four wide column">
+                <h3 class="ui dividing header">
+                  発表可能なセッション
+                </h3>
+                <div id="possible" class="ui segment session-frame dropzone">
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -329,43 +355,120 @@ var renderApp = function(sessions) {
 
 var clickedAnswerButton = function(event) {
   var sessions = event.data;
-  var csv = sessions.map(function(session) {
-    return {
-      sid: session.sid,
-      name: session.name,
-      value: $(`input[name='${session.sid}']:checked`).val()
-    };
-  }).filter(function(session) {
-    return session.value !== '0' && session.value !== undefined;
-  }).map(function(session) {
-    return session.sid + "," + session.value;
-  }).join("\n");
+  var possibles = $(`#possible`)
+    .children(".session.label")
+    .get();
+  var desirables = $(`#desirable`)
+    .children(".session.label")
+    .get();
 
-  if(csv === "") {
-    alert("1つ以上「このセッションで発表が望ましい」もしくは「このセッションで発表できる」にチェックを入れてください。");
+  if (possibles.length === 0 && desirables.length === 0) {
+    alert("1つ以上「発表可能なセッション」もしくは「発表に適するセッション」の枠にセッションを入れてください。");
     return;
-  };
+  }
 
-  var $store = $('[name=store]')[0];
+  var $store = $("[name=store]")[0];
   var tasks = {
-    tid: $store._FACT1___tid.value,
-    submission_id: $store._FACT1___submission_id.value,
-    sessions: csv
+    // tid: $store._FACT1___tid.value,
+    // submission_id: $store._FACT1___submission_id.value,
+    possibles: possibles
+      .map(function(elm) {
+        return $(elm).attr("id");
+      })
+      .join(","),
+    desirables: desirables
+      .map(function(elm) {
+        return $(elm).attr("id");
+      })
+      .join(","),
+    uid: $uid,
   };
 
-  console.log($store);
-  console.log(tasks);
+  console.log("task", $task);
 
   $($store.tid).val(tasks.tid);
   $($store.submission_id).val(tasks.submission_id);
-  $($store.sessions).val(tasks.sessions);
+  $($store.possibles).val(tasks.possibles);
+  $($store.desirables).val(tasks.desirables);
+  $($store.uid).val(tasks.uid);
   $($store).submit();
 };
 
 $(function() {
   appendStyle(styles);
 
-  $app = $('#app-root');
-  $app.append(renderApp(sessions))
-  $app.find('.js-answer-button').click(sessions, clickedAnswerButton);
+  $app = $("#app-root");
+  $app.append(renderApp(sessions));
+  $app.find(".js-answer-button").click(sessions, clickedAnswerButton);
+});
+
+var randomstr = function(length) {
+  var s = "";
+  length = length || 32;
+  for (i = 0; i < length; i++) {
+    random = (Math.random() * 16) | 0;
+    s += (i == 12 ? 4 : i == 16 ? (random & 3) | 8 : random).toString(16);
+  }
+  return s;
+};
+
+$(document).ready(function() {
+  $uid = $.cookie("uid");
+  if (!$uid) {
+    $uid = randomstr();
+    $.cookie("uid", $uid, { expires: 20, path: "/" });
+  }
+  console.log("uid", $.cookie("uid"), $uid);
+
+  var dragging = null;
+
+  $(`.draggable`)
+    .on("dragstart", function(e) {
+      dragging = $(this);
+    })
+    .on("dragend", function(e) {
+      dragging = null;
+    });
+
+  var getDropZone = function(dragging, target) {
+    if (!dragging || !target) {
+      return null;
+    }
+    var targetDropzone = null;
+    var myDropzone = dragging.parent();
+    if (target.hasClass("dropzone")) {
+      targetDropzone = target;
+    } else if (target.parent().hasClass("dropzone")) {
+      targetDropzone = target.parent();
+    }
+    if (myDropzone.attr("id") === targetDropzone.attr("id")) {
+      return null;
+    }
+    return targetDropzone;
+  };
+
+  var innerChild = false;
+  $(`.dropzone`)
+    .on("dragenter", function(e) {
+      var dropzone = getDropZone(dragging, $(e.target));
+      if (dropzone) {
+        dropzone.addClass("hovering");
+      }
+    })
+    .on("dragleave", function(e) {
+      $(e.target).removeClass("hovering");
+    })
+    .on("dragover", function(e) {
+      var dropzone = getDropZone(dragging, $(e.target));
+      if (dropzone) {
+        e.preventDefault();
+      }
+    })
+    .on("drop", function(e) {
+      var dropzone = getDropZone(dragging, $(e.target));
+      if (dropzone) {
+        dropzone.removeClass("hovering");
+        dropzone.append(dragging);
+      }
+    });
 });
