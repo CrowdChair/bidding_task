@@ -384,8 +384,6 @@ var clickedAnswerButton = function(event) {
     uid: $uid,
   };
 
-  console.log("task", $task);
-
   $($store.tid).val(tasks.tid);
   $($store.submission_id).val(tasks.submission_id);
   $($store.possibles).val(tasks.possibles);

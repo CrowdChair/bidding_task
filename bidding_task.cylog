@@ -1,0 +1,129 @@
+// Bidding Task(セッションへの投票タスク)
+// created:     2017.08.02 by kobayang
+// lastupdated: 2017.11.17 by kobayang
+
+//////////////////////////////////////////////////
+Schema:
+  Dataset(
+    submission_id       int;
+    title               text;
+    kind_of_session     char(32);
+    first_request       char(32);
+    second_request      char(32);
+    does_request_demo   char(32);
+    abstract            text;
+    keywords            text;
+    topics              text;
+    authors             text;
+    author_affiliations text;
+  )key(submission_id);
+
+  BiddingStore(
+    tid            int;
+    submission_id  int;
+    possibles      text; // 投票されたセッションの結果
+    desirables     text;
+    uid            char(32); // ワーカーのID
+  )key(tid);
+
+  !BiddingTask(
+    tid           int;
+    submission_id int;
+    _open_fact_id int;
+  );
+
+  CallbackStore(
+    tid            int;
+    submission_id  int;
+  )key(tid);
+
+  !CallbackTask(
+    tid           int;
+    submission_id int;
+    _open_fact_id int;
+  );
+
+  TaskSeeds(
+     tid           int:auto_increment;
+     submission_id int;
+   )key(tid);
+
+//////////////////////////////////////////////////
+Rules:
+  TaskSeeds(submission_id) <-
+    Dataset(
+      submission_id, title, kind_of_session,
+      first_request, second_request, does_request_demo,
+      abstract, keywords, topics,
+      authors, author_affiliations
+    );
+
+  BiddingStore(tid, submission_id, desirables, possibles, uid)/open <-
+    TaskSeeds(tid, submission_id);
+
+  !BiddingTask(_open_fact_id, tid, submission_id) <-
+    ?BiddingStore(
+      _fact_id:_open_fact_id,
+      tid,
+      submission_id
+    );
+
+  CallbackStore(tid, submission_id)/open <-
+    TaskSeeds(tid, submission_id);
+
+  !CallbackTask(_open_fact_id, tid, submission_id) <-
+    ?CallbackStore(
+      _fact_id:_open_fact_id,
+      tid,
+      submission_id
+    );
+
+TaskSeeds(submission_id) <-
+  BiddingStore(tid, submission_id);
+
+//////////////////////////////////////////////////
+Views:
+  !BiddingTask(_open_fact_id, tid, submission_id) {
+    <div>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.11/semantic.min.css" integrity="sha256-g4+HzlttFiqgeuCnx3m308o0ahuBZ+0CRxaRWfSL0BU=" crossorigin="anonymous" />
+      <script src='https://code.jquery.com/jquery-3.1.1.min.js' integrity='sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=' crossorigin='anonymous'></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.11/semantic.min.js" integrity="sha256-Wl7niWgEJX3PdPn8lBzIDCWO1FBCYExjQihbT4ldMok=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" integrity="sha256-KM512VNnjElC30ehFwehXjx1YCHPiQkOPmqnrWtpccM=" crossorigin="anonymous"></script>
+
+      <div id='app-root'></div>
+
+      <form fact=BiddingStore(tid, submission_id, possibles, desirables, uid, _open_fact_id) move=!CallbackTask() name='store'>
+        <input type='hidden' name='tid' />
+        <input type='hidden' name='submission_id' />
+        <input type='hidden' name='possibles' />
+        <input type='hidden' name='desirables' />
+        <input type='hidden' name='uid' />
+      </form>
+    </div>
+
+    foreach Dataset(submission_id, title, kind_of_session,
+      first_request, second_request, does_request_demo,
+      abstract, keywords, topics, authors, author_affiliations
+    ) {
+      <div>
+        <input type='hidden' name='title'    value='$title' />
+        <input type='hidden' name='authors'  value='$authors' />
+        <input type='hidden' name='abstract' value='$abstract' />
+        <input type='hidden' name='keywords' value='$keywords' />
+      </div>
+    }
+  }
+
+  !CallbackTask(_open_fact_id, tid, submission_id) {
+    <div>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.11/semantic.min.css" integrity="sha256-g4+HzlttFiqgeuCnx3m308o0ahuBZ+0CRxaRWfSL0BU=" crossorigin="anonymous" />
+      <script src='https://code.jquery.com/jquery-3.1.1.min.js' integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.11/semantic.min.js" integrity="sha256-Wl7niWgEJX3PdPn8lBzIDCWO1FBCYExjQihbT4ldMok=" crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" integrity="sha256-KM512VNnjElC30ehFwehXjx1YCHPiQkOPmqnrWtpccM=" crossorigin="anonymous"></script>
+
+      <div id='app-root'></div>
+
+      <form fact=CallbackStore(tid, submission_id) move=!BiddingTask() name='store'>
+      </form>
+    </div>
+  }
