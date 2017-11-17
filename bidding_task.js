@@ -413,12 +413,11 @@ var randomstr = function(length) {
 };
 
 $(document).ready(function() {
-  $uid = $.cookie("uid");
+  $uid = localStorage.user;
   if (!$uid) {
     $uid = randomstr();
-    $.cookie("uid", $uid, { expires: 20, path: "/" });
+    localStorage.user = $uid;
   }
-  console.log("uid", $.cookie("uid"), $uid);
 
   var dragging = null;
 
