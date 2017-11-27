@@ -215,7 +215,7 @@ var sessions = $.parseJSON(`
 
 var styles = `
   .page {
-    margin: 40px;
+    margin: 30px;
   }
 
   .content {
@@ -250,6 +250,13 @@ var styles = `
   }
 `;
 
+var getValueFromInput = function(name) {
+  var text = $(`input[name='${name}']`).val();
+  return $("<div />")
+    .text(text)
+    .html();
+};
+
 var renderSessionLabels = function(sessions) {
   return sessions
     .map(function(session) {
@@ -265,49 +272,34 @@ var renderSessionLabels = function(sessions) {
 var renderApp = function(sessions) {
   var $sessionLabels = renderSessionLabels(sessions);
 
-  var getValueFromInput = function(name) {
-    return $(`input[name='${name}']`).val();
-  };
-
-  var $title = getValueFromInput("title");
-  var $authors = getValueFromInput("authors");
-  var $abstract = getValueFromInput("abstract");
-  var $keywords = getValueFromInput("keywords");
-
   var $task = $(`
     <div class="bidding task page">
-      <div class="main">
+      <div class="ui container main">
         <h1>投稿のセッション投票タスク</h1>
         <div class="question header">
-          <p>以下の投稿内容を読み、設問に答えてください</p>
+          <p>はじめにあなたの投稿内容を記述し、以下の設問に答えてください。</p>
         </div>
         <div class="ui segment">
           <div class="ui top attached label">投稿内容</div>
           <div class="content">
-            <table class="ui table">
-              <tbody>
-                <tr>
-                  <td class="collapsing">タイトル</td>
-                  <td>${$title}</td>
-                </tr>
-                <tr>
-                  <td class="collapsing">概要</td>
-                  <td>${$abstract}</td>
-                </tr>
-                <tr>
-                  <td class="collapsing">キーワード</td>
-                  <td>${$keywords}</td>
-                </tr>
-              </tbody>
-            </table>
+            <form class="ui form">
+              <div class="field">
+                <label>投稿タイトル</label>
+                <input id="title" type="text" name="title">
+              </div>
+              <div class="field">
+                <label>発表者名</label>
+                <input id="name" type="text" name="name">
+              </div>
+            </form>
           </div>
         </div>
         <section class="question">
           <h2>設問</h2>
           <div class="question header">
             <p>
-              セッションリストの中から該当するラベルを選択し，「発表に適するセッション」または「発表可能なセッション」の枠に
-              ドラッグ&ドロップしてください．<b>目標数5個以上</b>
+              セッションリストの中から該当するラベルを選択し、「発表に適するセッション」または「発表可能なセッション」の枠に
+              ドラッグ&ドロップしてください。<b>目標数5個以上</b>
             </p>
           </div>
           <div class="sessions section">
@@ -354,6 +346,20 @@ var renderApp = function(sessions) {
 };
 
 var clickedAnswerButton = function(event) {
+  var title = getValueFromInput("title");
+
+  if (!title || title === "") {
+    alert("発表投稿のタイトルを入力してください");
+    return;
+  }
+
+  var name = getValueFromInput("name");
+
+  if (!name || name === "") {
+    alert("発表者を入力してください");
+    return;
+  }
+
   var sessions = event.data;
   var possibles = $(`#possible`)
     .children(".session.label")
@@ -369,8 +375,11 @@ var clickedAnswerButton = function(event) {
 
   var $store = $("[name=store]")[0];
   var tasks = {
-    // tid: $store._FACT1___tid.value,
-    // submission_id: $store._FACT1___submission_id.value,
+    // !!本番ではコメントアウトを取る!!
+    tid: $store._FACT1___tid.value,
+    uid: $uid,
+    title: title,
+    name: name,
     possibles: possibles
       .map(function(elm) {
         return $(elm).attr("id");
@@ -381,20 +390,21 @@ var clickedAnswerButton = function(event) {
         return $(elm).attr("id");
       })
       .join(","),
-    uid: $uid,
   };
 
   $($store.tid).val(tasks.tid);
-  $($store.submission_id).val(tasks.submission_id);
   $($store.possibles).val(tasks.possibles);
   $($store.desirables).val(tasks.desirables);
   $($store.uid).val(tasks.uid);
+  $($store.title).val(tasks.title);
+  $($store.name).val(tasks.name);
   $($store).submit();
 };
 
 $(function() {
   appendStyle(styles);
 
+  $("header").remove();
   $app = $("#app-root");
   $app.append(renderApp(sessions));
   $app.find(".js-answer-button").click(sessions, clickedAnswerButton);
