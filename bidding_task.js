@@ -237,8 +237,15 @@ var styles = `
     cursor:pointer;
   }
 
+  .ui.rank.label {
+    background-color: #FFFFFF !important;
+  }
+
   .session-frame {
-    min-height: 200px;
+  }
+
+  .rank {
+    padding-right: 6px;
   }
 
   .hovering {
@@ -269,15 +276,32 @@ var renderSessionLabels = function(sessions) {
     .join("");
 };
 
+var renderSessionPools = function(poolsNum) {
+  var pools = [];
+  for (var i = 1; i <= poolsNum; i++) {
+    pools.push(i);
+  }
+  return pools
+    .map(function(id) {
+      return `
+    <div id="${id}" class="ui segment session-frame dropzone related-session">
+      <div class="ui label rank">${id}</div>
+    </div>
+    `;
+    })
+    .join("");
+};
+
 var renderApp = function(sessions) {
   var $sessionLabels = renderSessionLabels(sessions);
+  var $sessionPools = renderSessionPools(5);
 
   var $task = $(`
     <div class="bidding task page">
       <div class="ui container main">
         <h1>投稿のセッション投票タスク</h1>
         <div class="question header">
-          <p>はじめにあなたの投稿内容を記述し、以下の設問に答えてください。</p>
+          <p>はじめにあなたの発表投稿の内容を記述し、以下の設問に答えてください。</p>
         </div>
         <div class="ui segment">
           <div class="ui top attached label">投稿内容</div>
@@ -298,30 +322,21 @@ var renderApp = function(sessions) {
           <h2>設問</h2>
           <div class="question header">
             <p>
-              セッションリストの中から該当するラベルを選択し、「発表に適するセッション」または「発表可能なセッション」の枠に
-              ドラッグ&ドロップしてください。<b>目標数5個以上</b>
+              セッションリストの中から投稿に関連するセッションを、関連度の高いものから順に
+              ドラッグ&ドロップして入れてください。<b>目標数5個。</b>
             </p>
           </div>
           <div class="sessions section">
             <div class="ui stackable grid">
 
-              <div class="four wide column">
+              <div id="related-session-pool" class="six wide column">
                 <h3 class="ui dividing header">
-                  発表に適するセッション
+                  発表に関連するセッション
                 </h3>
-                <div id="desirable" class="ui segment session-frame dropzone">
-                </div>
+                ${$sessionPools}
               </div>
 
-              <div class="four wide column">
-                <h3 class="ui dividing header">
-                  発表可能なセッション
-                </h3>
-                <div id="possible" class="ui segment session-frame dropzone">
-                </div>
-              </div>
-
-              <div class="eight wide column">
+              <div class="ten wide column">
                 <h3 class="ui dividing header">
                   セッションリスト
                 </h3>
@@ -361,17 +376,34 @@ var clickedAnswerButton = function(event) {
   }
 
   var sessions = event.data;
-  var possibles = $(`#possible`)
-    .children(".session.label")
-    .get();
-  var desirables = $(`#desirable`)
-    .children(".session.label")
+
+  var getSessionsFromPools = $(`#related-session-pool`)
+    .children(".related-session")
     .get();
 
-  if (possibles.length === 0 && desirables.length === 0) {
-    alert("1つ以上「発表可能なセッション」もしくは「発表に適するセッション」の枠にセッションを入れてください。");
+  console.log(relatedSessions);
+
+  if (getSessionsFromPools.length === 0) {
+    alert("1つ以上「発表に関連するセッション」にセッションを入れてください。");
     return;
   }
+
+  var relatedSessions = getSessionsFromPools.map(function(elm) {
+    var rank = $(elm).attr("id");
+    var sid = "";
+
+    var label = $(elm)
+      .children(".session.label")
+      .get();
+    if (label.length === 1) {
+      sid = $(label[0]).attr("id");
+    }
+    return {
+      rank: rank,
+      sid: sid,
+    };
+  });
+  stringifySessions = JSON.stringify(relatedSessions);
 
   var $store = $("[name=store]")[0];
   var tasks = {
@@ -380,16 +412,7 @@ var clickedAnswerButton = function(event) {
     uid: $uid,
     title: title,
     name: name,
-    possibles: possibles
-      .map(function(elm) {
-        return $(elm).attr("id");
-      })
-      .join(","),
-    desirables: desirables
-      .map(function(elm) {
-        return $(elm).attr("id");
-      })
-      .join(","),
+    sessions: stringifySessions,
   };
 
   $($store.tid).val(tasks.tid);
@@ -475,7 +498,18 @@ $(document).ready(function() {
       var dropzone = getDropZone(dragging, $(e.target));
       if (dropzone) {
         dropzone.removeClass("hovering");
+        if (dropzone.attr("id") !== "default") {
+          // defaultではない場合かつ何か入っていたら交換する
+          var dropped = dropzone.children(".ui.session.label").first();
+          if (dropped) {
+            dragging.parent().append(dropped);
+            dropzone.append(dragging);
+            return;
+          }
+        }
+        // それ以外の場合はそのままDropする
         dropzone.append(dragging);
+        return;
       }
     });
 });

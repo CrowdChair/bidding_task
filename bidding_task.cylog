@@ -10,8 +10,7 @@ Schema:
 
   BiddingStore(
     tid           int;
-    possibles     text; // 投票されたセッションの結果
-    desirables    text;
+    sessions      text; // 投票されたセッションの結果
     title         text;
     name          text;
     uid           char(32); // ワーカーのID
@@ -30,7 +29,7 @@ Rules:
   TaskSeeds();
   TaskSeeds();
 
-  BiddingStore(tid, desirables, possibles, title, name, uid)/open <-
+  BiddingStore(tid, sessions, title, name, uid)/open <-
     TaskSeeds(tid);
 
   !BiddingTask(_open_fact_id, tid) <-
@@ -50,10 +49,9 @@ Views:
 
       <div id='app-root'></div>
 
-      <form fact=BiddingStore(tid, possibles, desirables, uid, title, name,  _open_fact_id) move=!Thanks() name='store'>
+      <form fact=BiddingStore(tid, sessions, uid, title, name,  _open_fact_id) move=!Thanks() name='store'>
         <input type='hidden' name='tid' />
-        <input type='hidden' name='possibles' />
-        <input type='hidden' name='desirables' />
+        <input type='hidden' name='sessions' />
         <input type='hidden' name='uid' />
         <input type='hidden' name='title' />
         <input type='hidden' name='name' />
