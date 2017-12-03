@@ -37,6 +37,6 @@ $(function() {
   appendStyle(styles);
   $("header").remove();
 
-  $app = $("#app-root");
+  var $app = $("#app-root");
   $app.append(renderApp());
 });
