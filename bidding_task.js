@@ -131,7 +131,9 @@ var renderSessionLabels = function(sessions) {
   return sessions
     .map(function(session) {
       return `
-      <div class="ui session label draggable" id="${session.sid}" draggable="true">
+      <div class="ui session label draggable" id="${
+        session.sid
+      }" draggable="true">
         ${session.name}
       </div>
     `;
@@ -249,7 +251,9 @@ var clickedAnswerButton = function(event) {
     .find(".session.label")
     .get();
   if (getSessionLabelFromPools.length === 0) {
-    alert("1つ以上「発表投稿に関連するセッション」にセッションを入れてください。");
+    alert(
+      "1つ以上「発表投稿に関連するセッション」にセッションを入れてください。"
+    );
     return;
   }
 
@@ -269,7 +273,7 @@ var clickedAnswerButton = function(event) {
     }
     return {
       rank: rank,
-      sid: sid,
+      sid: sid
     };
   });
   var stringifySessions = JSON.stringify(relatedSessions);
@@ -287,7 +291,7 @@ var clickedAnswerButton = function(event) {
     uid: $uid,
     title: title,
     name: name,
-    sessions: stringifySessions,
+    sessions: stringifySessions
   };
 
   $($store.tid).val(tasks.tid);
